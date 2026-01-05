@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel | SciRox</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b0b0b;
+      color: #fff;
+      padding: 40px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      margin-right: 10px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    button {
+      padding: 10px 18px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: #95c11e;
+      color: #000;
+      font-weight: bold;
+    }
+
+    ul {
+      margin-top: 30px;
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: rgba(255,255,255,0.08);
+      padding: 15px 20px;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .delete-btn {
+      background: red;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Admin Panel</h2>
+
+  <!-- ADD EVENT -->
+  <div>
+    <input id="title" placeholder="Event Title" />
+    <input id="date" placeholder="Event Date (e.g. 15 Feb 2026)" />
+    <button id="addBtn">Add Event</button>
+  </div>
+
+  <!-- EVENTS LIST -->
+  <ul id="adminEvents"></ul>
+
+  <!-- FIREBASE + LOGIC -->
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import { onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import {
+    collection,
+    addDoc,
+    getDocs,
+    deleteDoc,
+    doc
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  onAuthStateChanged(auth, user => {
+    if (!user) window.location.href = "admin-login.html";
+    else loadEvents();
+  });
+
+  const eventsRef = collection(db, "events");
+
+  async function loadEvents() {
+    adminEvents.innerHTML = "";
+    const snap = await getDocs(eventsRef);
+
+    snap.forEach(d => {
+      adminEvents.innerHTML += `
+        <li>
+          ${d.data().title} — ${d.data().date}
+          <button onclick="deleteEvent('${d.id}')">❌</button>
+        </li>`;
+    });
+  }
+
+  addBtn.onclick = async () => {
+    await addDoc(eventsRef, {
+      title: title.value,
+      date: date.value
+    });
+    title.value = "";
+    date.value = "";
+    loadEvents();
+  };
+
+  window.deleteEvent = async (id) => {
+    await deleteDoc(doc(db, "events", id));
+    loadEvents();
+  };
+</script>
+
+</body>
+</html>
